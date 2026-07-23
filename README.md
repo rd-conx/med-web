@@ -28,5 +28,5 @@ As a result, 151 of the 209 mixes have playable audio here.
 
 Attribution and licence for each Creative Commons song are shown in the browser
 and come from the Open Multitrack Testbed and Shaking Through (Weathervane Music).
-Please respect each song's licence — including the non-commercial clause where it
-applies — when reusing any audio.
+Please respect each song's licence including the non-commercial clause where it
+applies when reusing any audio.

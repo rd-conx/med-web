@@ -935,8 +935,8 @@ const scoreColor = v =>
 const esc = s => (s == null ? "" : String(s))
   .replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-// Audio paths in data.json are repo-relative; this page lives in web/, so go up one.
-const AUDIO = p => p ? "../" + p : null;
+// Audio paths in data.json are repo-relative, and this page lives at the repo root.
+const AUDIO = p => p || null;
 
 // Bytes -> "97.3 MB" / "11 KB" (room-measurement notes are KB-sized).
 const humanSize = n => n == null ? "" :
