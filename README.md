@@ -1,7 +1,7 @@
-# Mix Evaluation Dataset — web
+# Mix Evaluation Dataset - web
 
 A browser for the Mix Evaluation Dataset: listening-test evaluations of different
-**mixes** of the same **songs**, with in-browser audio comparison. It collects
+mixes of the same songs, with in-browser audio comparison. It collects
 **20 songs / 209 mixes / 5,473 evaluations**, where each evaluation is a
 listener's rating (and often a written comment) of one mix.
 
@@ -17,7 +17,7 @@ Of the 20 songs:
 
 - **12 are Creative Commons** (BY 3.0 or BY-NC 4.0) — their mixes are playable
   here. The **BY-NC** titles are free to share with attribution but restricted
-  from **commercial** use.
+  from commercial use.
 - **6 are copyrighted** and **2 have unknown/undocumented rights** — for these,
   **no audio is published**. Their ratings and comments still appear (that
   evaluation data is the research record, not the copyrighted recording), but the
