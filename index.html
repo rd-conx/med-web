@@ -344,6 +344,24 @@
     flex:none;
     padding:18px 26px 0;
   }
+  /* "‹ All songs" — returns to the song menu on mobile; hidden on desktop
+     (the sidebar is always present there). Shown via the ≤820px block. */
+  .mback{
+    display:none;
+    align-items:center;
+    gap:4px;
+    margin:0 0 8px;
+    padding:5px 10px 5px 6px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:var(--panel);
+    color:var(--acc);
+    font-size:13px;
+    cursor:pointer;
+  }
+  .mback:hover{
+    border-color:var(--acc);
+  }
   .mainscroll{
     flex:1;
     overflow-y:auto;
@@ -836,6 +854,110 @@
   }
 
   /* ============================================================
+     Info button + "About this dataset" modal (summary + how-to).
+     Surfaces the stats/instructions that are hidden on mobile.
+     ============================================================ */
+  .ibtn{
+    flex:none;
+    align-self:center;
+    width:28px;
+    height:28px;
+    margin-left:10px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--mut);
+    font-size:15px;
+    line-height:1;
+    cursor:pointer;
+    display:none;          /* redundant on desktop (stats are visible) — shown ≤820px */
+    align-items:center;
+    justify-content:center;
+  }
+  .ibtn:hover{
+    border-color:var(--acc);
+    color:var(--fg);
+  }
+  .modal{
+    position:fixed;
+    inset:0;
+    z-index:60;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:rgba(0,0,0,.55);
+  }
+  .modal.on{
+    display:flex;
+  }
+  .modalbox{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    width:100%;
+    max-width:440px;
+    max-height:85vh;
+    overflow-y:auto;
+    padding:18px 22px 22px;
+    box-shadow:0 12px 48px rgba(0,0,0,.35);
+  }
+  .modalhead{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .modalhead h2{
+    font-family:var(--serif);
+    font-size:20px;
+    font-weight:600;
+    letter-spacing:-.01em;
+    margin:0;
+  }
+  .modalclose{
+    flex:none;
+    border:none;
+    background:none;
+    color:var(--mut);
+    font-size:22px;
+    line-height:1;
+    cursor:pointer;
+    padding:0 2px;
+  }
+  .modalclose:hover{
+    color:var(--fg);
+  }
+  .modalstats{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:4px 14px;
+    margin:14px 0 4px;
+    font-size:13.5px;
+  }
+  .modalstats b{
+    font-variant-numeric:tabular-nums;
+    font-weight:600;
+    text-align:right;
+  }
+  .modalstats span{
+    color:var(--mut);
+  }
+  .modalhow{
+    border-top:1px solid var(--line);
+    margin-top:14px;
+    padding-top:12px;
+    color:var(--fg);
+    font-size:13px;
+  }
+  .modalhow p{
+    margin:0 0 9px;
+  }
+  .modalhow p:last-child{
+    margin-bottom:0;
+  }
+
+  /* ============================================================
      Misc
      ============================================================ */
   .empty{
@@ -863,22 +985,81 @@
   }
 
   /* ============================================================
-     Narrow screens: stack, sidebar keeps its own scroll
+     Narrow screens: two full-screen "screens" — the song menu (aside)
+     and one song's page (main) — shown one at a time. body.m-detail
+     flips which is visible; the page's "‹ All songs" button returns.
+     Each screen keeps the base pinned-header + own-scroll behaviour.
      ============================================================ */
   @media(max-width:820px){
     .wrap{
-      grid-template-columns:1fr;
-      grid-template-rows:auto 1fr;
+      display:block;
+      position:relative;
+    }
+    aside,main{
+      height:100%;
     }
     aside{
-      max-height:38vh;
       border-right:none;
-      border-bottom:1px solid var(--line);
     }
-    .mainhead{padding:14px 16px 0}
+    main{
+      display:none;
+    }
+    body.m-detail aside{display:none}
+    body.m-detail main{display:flex}
+    /* Rooms is always full-screen (no song menu alongside it) */
+    .wrap.rooms aside{display:none}
+    .wrap.rooms main{display:flex}
+    .mback{display:inline-flex;margin-bottom:6px}
+    /* Reclaim the pinned zone so the mix table/comments get real estate:
+       drop dataset-level stats and the instructional hint, and slim the
+       song head + transport. Nothing essential is lost — the transport
+       stays pinned and every detail is in the (now taller) scroll area. */
+    header .stats{display:none}
+    .ibtn{display:flex;margin-left:auto}   /* stats gone — surface the info button top-right */
+    .mainhead{padding:10px 16px 0}
+    .mainhead .hint{display:none}
+    .songhead{margin-bottom:2px}
+    .songhead h2{font-size:20px}
+    .meta{margin-bottom:8px}
     .mainscroll{padding:0 16px 20px}
-    .transport{flex-wrap:wrap;row-gap:8px}
+    .transport{flex-wrap:wrap;row-gap:8px;padding:8px 12px;margin-bottom:0}
     .tactive{flex:1 1 100%;max-width:100%;order:9}
+  }
+
+  /* ---- Phones: tighten the chrome, and drop the lower-priority mix-table
+     columns. Their data is still one tap away in the row's detail panel
+     (the .dgrid there repeats mixer/type/±/min–max), and .mainscroll gains
+     an x-scroll as a safety net for anything that still overflows. ---- */
+  @media(max-width:640px){
+    header{padding:10px 14px}
+    h1{font-size:17px}
+    .htop{gap:8px 14px}
+    .stat{padding:0 8px;font-size:12px}
+    .side-top{padding:12px 12px 8px}
+    .search{font-size:16px}          /* ≥16px stops iOS zooming on focus */
+    .mainhead{padding:12px 12px 0}
+    .mainscroll{padding:0 12px 18px;overflow:auto}
+    .meta{gap:4px 12px}
+    .comments{grid-template-columns:1fr}
+    .bar{min-width:60px}
+    .scoreval{min-width:32px}
+    /* hide ±, n, notes */
+    th:nth-child(6),td:nth-child(6),
+    th:nth-child(7),td:nth-child(7),
+    th:nth-child(8),td:nth-child(8){display:none}
+  }
+
+  @media(max-width:480px){
+    /* also drop Mixer + Type — leaves #, Mix, Score, Audio */
+    th:nth-child(3),td:nth-child(3),
+    th:nth-child(4),td:nth-child(4){display:none}
+    .transport{gap:8px;padding:8px 10px}
+    .tbtn{width:38px;height:38px}      /* comfortable touch targets */
+    .ttime{min-width:0}
+    .tpos{min-width:0}
+    .photogrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+    .photogrid img{height:104px}
+    .lightbox{padding:12px}
   }
 </style>
 </head>
@@ -891,6 +1072,7 @@
       <button class="tab" data-v="rooms">Rooms</button>
     </nav>
     <div class="stats" id="summary"></div>
+    <button class="ibtn" id="infobtn" title="About this dataset" aria-label="About this dataset">ⓘ</button>
   </div>
 </header>
 
@@ -911,11 +1093,40 @@
 
 <div class="lightbox" id="lightbox"><img alt=""></div>
 
+<div class="modal" id="infomodal">
+  <div class="modalbox">
+    <div class="modalhead">
+      <h2>Mix Evaluation Dataset</h2>
+      <button class="modalclose" id="infoclose" title="Close" aria-label="Close">×</button>
+    </div>
+    <div class="modalstats" id="infostats"></div>
+    <div class="modalhow">
+      <p>Browse the songs list, then open a song to see its mixes. Press <b>play</b> and use
+      <b>◀ ▶</b> — or hit <b>▶</b> on any mix — to switch: every mix plays from the
+      <b>same point</b>, MUSHRA-style A/B.</p>
+      <p><b>Tap a mix</b> to reveal its comments and every individual rating. The
+      <b>best</b> and <b>worst</b> mixes are highlighted.</p>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // Small helpers
 // ============================================================
 const $ = s => document.querySelector(s);
+
+// ---- Mobile navigation ----
+// On narrow screens the app is two full-screen views: the song menu and one
+// song's page. body.m-detail shows the page (see the ≤820px CSS); toggling it
+// is a no-op on desktop, which has no matching rule and always shows both panes.
+const isMobile = () => matchMedia("(max-width:820px)").matches;
+function showSongDetail(){ document.body.classList.add("m-detail"); }
+function showSongMenu(){
+  document.body.classList.remove("m-detail");
+  const on = document.querySelector(".songitem.on");
+  if(on) on.scrollIntoView({ block:"nearest" });
+}
 
 // Format a number to d decimals, or an em-dash when null/undefined.
 const fmt = (v, d = 3) => v == null ? "—" : (+v).toFixed(d);
@@ -1205,15 +1416,26 @@ fetch("data.json")
 function init(){
   const s = DATA.summary;
 
-  // Summary stat chips.
-  $("#summary").innerHTML = [
+  // Summary stats — shown as header chips (desktop) and inside the info modal
+  // (where they stay reachable on mobile, which hides the header chips).
+  const summaryRows = [
     ["songs",        s.n_songs],
     ["mixes",        s.n_mixes],
     ["evaluations",  s.n_evaluations],
     ["participants", s.n_participants],
     ["with audio",   `${s.n_mixes_with_audio}/${s.n_mixes}`],
     ["evaluated",    `${s.n_mixes_evaluated}/${s.n_mixes}`],
-  ].map(([k,v]) => `<div class="stat"><b>${v}</b> <span>${k}</span></div>`).join("");
+  ];
+  $("#summary").innerHTML = summaryRows
+    .map(([k,v]) => `<div class="stat"><b>${v}</b> <span>${k}</span></div>`).join("");
+  $("#infostats").innerHTML = summaryRows
+    .map(([k,v]) => `<b>${v}</b><span>${k}</span>`).join("");
+
+  // Info modal open/close (button, × , backdrop click; Esc handled below).
+  const infomodal = $("#infomodal");
+  $("#infobtn").onclick = () => infomodal.classList.add("on");
+  $("#infoclose").onclick = () => infomodal.classList.remove("on");
+  infomodal.onclick = e => { if(e.target === infomodal) infomodal.classList.remove("on"); };
 
   // Songs | Rooms view toggle — only shown when room data exists.
   const hasRooms = DATA.rooms && Object.keys(DATA.rooms).length > 0;
@@ -1263,9 +1485,9 @@ function init(){
   };
 
   // Space toggles play/pause, ←/→ step mixes, / focuses search,
-  // Esc closes the photo lightbox — unless the user is typing in a field.
+  // Esc closes the photo lightbox / info modal — unless typing in a field.
   document.addEventListener("keydown", e => {
-    if(e.key === "Escape"){ lb.classList.remove("on"); return; }
+    if(e.key === "Escape"){ lb.classList.remove("on"); infomodal.classList.remove("on"); return; }
     if(/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
     if(e.key === "/"){ e.preventDefault(); q.focus(); return; }
     if(!Player.active) return;
@@ -1335,9 +1557,9 @@ function renderSongList(){
   }).join("");
   list.onclick = e => {
     const pb = e.target.closest(".splay[data-play-song]");
-    if(pb){ playSong(pb.dataset.playSong); return; }   // play the whole song straight away
+    if(pb){ playSong(pb.dataset.playSong); return; }   // quick-play from the menu; stay on the list
     const it = e.target.closest(".songitem");
-    if(it) selectSong(it.dataset.s);
+    if(it){ selectSong(it.dataset.s); if(isMobile()) showSongDetail(); }   // open the song's page
   };
 }
 
@@ -1375,6 +1597,7 @@ function setView(v, inst){
     }
   } else {
     renderSong();   // same-song path rebinds the transport, playback continues
+    if(isMobile()) showSongMenu();   // leaving Rooms lands on the song menu, not a page
   }
 }
 
@@ -1478,9 +1701,12 @@ function drawRoomChart(el, meas, sel, hoverF){
   const XT = [20, 30, 50, 100, 200, 300, 500, 1000, 2000, 3000, 5000, 10000, 20000];
   const kf = f => f >= 1000 ? (f / 1000) + "k" : "" + f;
 
-  const W = Math.max(320, el.clientWidth - 26);
-  const H = Math.max(240, Math.min(360, W * 0.42));
-  const M = {t: 10, r: 108, b: 38, l: 40};
+  const W = Math.max(280, el.clientWidth - 26);
+  const H = Math.max(220, Math.min(360, W * 0.52));
+  // Narrow plots can't spare 108px for right-edge labels — shrink the label
+  // gutter (and later the label text) so the curves keep usable width.
+  const narrow = W < 480;
+  const M = {t: 10, r: narrow ? 66 : 108, b: 38, l: narrow ? 34 : 40};
   const iw = W - M.l - M.r, ih = H - M.t - M.b;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.setAttribute("height", H);
@@ -1533,7 +1759,7 @@ function drawRoomChart(el, meas, sel, hoverF){
     if(labels[i].yv - labels[i - 1].yv < 12.5) labels[i].yv = labels[i - 1].yv + 12.5;
   for(const L of labels)
     s += `<rect x="${M.l + iw + 6}" y="${L.yv - 4}" width="8" height="8" rx="2" fill="var(--c${L.slot + 1})"/>` +
-         `<text x="${M.l + iw + 18}" y="${L.yv + 3.5}" font-size="10.5" fill="var(--fg)">${esc(L.name.slice(0, 15))}</text>`;
+         `<text x="${M.l + iw + 18}" y="${L.yv + 3.5}" font-size="10.5" fill="var(--fg)">${esc(L.name.slice(0, narrow ? 8 : 15))}</text>`;
 
   if(hoverF != null)
     s += `<line x1="${x(hoverF)}" x2="${x(hoverF)}" y1="${M.t}" y2="${M.t + ih}" stroke="var(--mut)" stroke-width="1"/>`;
@@ -1645,6 +1871,7 @@ function renderSong(){
   // so the shared player stays visible while browsing long mix tables.
   m.innerHTML = `
     <div class="mainhead">
+      <button class="mback" type="button">‹ All songs</button>
       <div class="songhead"><h2>${esc(s.title)}</h2>
         <span class="mini">${esc(s.song_id)}${s.artist ? " · " + esc(s.artist) : ""}</span></div>
       <div class="meta">${lic} ${status}
@@ -1676,6 +1903,9 @@ function renderSong(){
     }
     renderSong();
   };
+
+  // "‹ All songs" (mobile) -> back to the song menu.
+  m.querySelector(".mback").onclick = showSongMenu;
 
   // Raw-stems header click -> expand/collapse the download list.
   const rb = m.querySelector(".rawbox");
@@ -1735,7 +1965,7 @@ function rowHTML(s, mx){
             : "";
 
   const audio = mx.has_audio
-    ? `<button class="lbtn" data-play="${esc(mx.mix_code)}" title="Listen to this mix (synced)">listen</button> <span class="badge ${mx.audio_quality === 'lossless' ? 'good' : ''}">${mx.audio_format}${mx.audio_quality === 'lossy' ? ' · lossy' : ''}</span>`
+    ? `<button class="lbtn" data-play="${esc(mx.mix_code)}" title="Listen to this mix (synced)">listen</button>`
     : `<span class="badge noaudio">no audio</span>`;
 
   // Mean fill plus a min–max range whisker over the same 0..1 track.
@@ -1793,6 +2023,17 @@ function toggleDetail(tr, s){
     <div class="comments">${commentsHTML(mx)}</div>
   </div></td>`;
   tr.after(det);
+
+  // Bring the clicked mix to the top of the scroll area (just under the sticky
+  // header) so the comments read from that row down — not left mid-table with
+  // the long detail spilling off the bottom.
+  const scroll = document.getElementById("mainscroll");
+  if(scroll){
+    const thead  = scroll.querySelector("thead");
+    const headH  = thead ? thead.offsetHeight : 0;
+    const delta  = tr.getBoundingClientRect().top - scroll.getBoundingClientRect().top - headH;
+    scroll.scrollTo({ top: scroll.scrollTop + delta, behavior: "instant" });
+  }
 }
 
 function commentsHTML(mx){
