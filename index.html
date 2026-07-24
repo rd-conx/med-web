@@ -337,11 +337,14 @@
   /* ---- main panel: pinned song head + transport, scrolling table ---- */
   main{
     min-height:0;
+    min-width:0;           /* let the grid column shrink to the viewport instead of
+                              overflowing when the mix table is intrinsically wide */
     display:flex;
     flex-direction:column;
   }
   .mainhead{
     flex:none;
+    min-width:0;           /* shrink to main; lets the transport/now-playing clamp */
     padding:18px 26px 0;
   }
   /* "‹ All songs" — returns to the song menu on mobile; hidden on desktop
@@ -364,7 +367,10 @@
   }
   .mainscroll{
     flex:1;
+    min-width:0;           /* shrink to main so overflow-x can engage on the table */
     overflow-y:auto;
+    overflow-x:auto;       /* a too-wide mix table scrolls inside the panel rather
+                              than pushing the whole page (and header) wider */
     padding:0 26px 26px;
   }
   .songhead{
@@ -571,7 +577,9 @@
     overflow:hidden;
     text-overflow:ellipsis;
     max-width:34%;
-    flex:none;
+    flex:0 1 auto;         /* may shrink (ellipsis) so the transport never forces
+                              the panel — and page — wider than the viewport */
+    min-width:0;
   }
   .tactive b{
     color:var(--fg);
@@ -722,6 +730,38 @@
     margin:0 0 4px;
     padding-bottom:4px;
     border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    gap:9px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .roomcaret{
+    color:var(--mut);
+    font-size:12px;
+    transition:transform .1s;
+  }
+  .roomsec.open .roomcaret{transform:rotate(90deg)}
+  .roombody{display:none}
+  .roomsec.open .roombody{display:block}
+  /* Expand-all / Collapse-all controls for the room sections */
+  .roomctl{
+    display:flex;
+    gap:8px;
+    margin:2px 0 6px;
+  }
+  .rbtn{
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:var(--panel);
+    color:var(--mut);
+    font-size:12.5px;
+    padding:4px 12px;
+    cursor:pointer;
+  }
+  .rbtn:hover{
+    color:var(--fg);
+    border-color:var(--acc);
   }
   .roomsec h3{
     font-size:13.5px;
@@ -1015,7 +1055,11 @@
        song head + transport. Nothing essential is lost — the transport
        stays pinned and every detail is in the (now taller) scroll area. */
     header .stats{display:none}
-    .ibtn{display:flex;margin-left:auto}   /* stats gone — surface the info button top-right */
+    /* Title takes the whole first line, so the tabs AND the ⓘ always drop to the
+       line below it together — never the intermediate state where the ⓘ wraps
+       alone under a title+tabs row. */
+    .htop h1{flex:1 1 100%}
+    .ibtn{display:flex;margin-left:auto}   /* sits at the right of that second line */
     .mainhead{padding:10px 16px 0}
     .mainhead .hint{display:none}
     .songhead{margin-bottom:2px}
@@ -1438,7 +1482,7 @@ function init(){
   infomodal.onclick = e => { if(e.target === infomodal) infomodal.classList.remove("on"); };
 
   // Songs | Rooms view toggle — only shown when room data exists.
-  const hasRooms = DATA.rooms && Object.keys(DATA.rooms).length > 0;
+  const hasRooms = DATA.rooms && Object.keys(DATA.rooms).some(roomHasContent);
   if(hasRooms){
     const tabs = $("#tabs");
     tabs.hidden = false;
@@ -1451,7 +1495,7 @@ function init(){
   // Institution filter chips (evaluator institutions); institutions with
   // room documentation get an ⓘ shortcut into the Rooms view.
   $("#instFilters").innerHTML = s.institutions.map(i => {
-    const info = hasRooms && DATA.rooms[i]
+    const info = hasRooms && roomHasContent(i)
       ? `<button class="chipinfo" data-room="${i}" title="Listening-room photos &amp; measurements">ⓘ</button>`
       : "";
     return `<span class="chip" data-i="${i}">${i}${info}</span>`;
@@ -1607,30 +1651,73 @@ function openLightbox(src){
   lb.classList.add("on");
 }
 
+// An institution is worth showing only if some group has a photo or a decoded
+// measurement chart. Institutions left empty (e.g. their only photo showed
+// people and was withheld) get no heading, no Rooms shortcut, and no section.
+function roomHasContent(inst){
+  const groups = (DATA.rooms && DATA.rooms[inst]) || [];
+  return groups.some(g => (g.images || []).length ||
+    (g.files || []).some(f => (f.measurements || []).length));
+}
+
 function renderRooms(){
   const rooms = DATA.rooms || {};
   const secs = Object.keys(rooms).sort().map(inst => {
     const groups = rooms[inst].map((g, gi) => {
-      const title = g.group ? `<h3>${esc(g.group)}</h3>` : "";
+      // Room photos (people are stripped from the public data.json at build time,
+      // so whatever images survive here are safe to show). Click to enlarge.
+      const photos = (g.images || []).length
+        ? `<div class="photogrid">${g.images.map(im =>
+            `<img loading="lazy" src="${esc(im.path)}" alt="${esc(im.filename)}">`).join("")}</div>`
+        : "";
       const charts = (g.files || []).map((f, fi) =>
         (f.measurements || []).length
           ? `<div class="roomchart" data-inst="${esc(inst)}" data-gi="${gi}" data-fi="${fi}"></div>`
           : ""
       ).join("");
-      return title + charts;
+      const body = photos + charts;
+      // Skip a group with nothing to show, so its <h3> never appears alone.
+      if(!body) return "";
+      const title = g.group ? `<h3>${esc(g.group)}</h3>` : "";
+      return title + body;
     }).join("");
-    return `<section class="roomsec" id="roomsec-${esc(inst)}"><h2>${esc(inst)}</h2>${groups}</section>`;
+    // Skip an institution with no photos or charts, so its <h2> never appears alone.
+    if(!groups) return "";
+    // Collapsible: click the heading to fold the institution away. Starts open so
+    // content (and its charts, which need width to render) mounts visible.
+    return `<section class="roomsec open" id="roomsec-${esc(inst)}">
+        <h2><span class="roomcaret">▶</span>${esc(inst)}</h2>
+        <div class="roombody">${groups}</div>
+      </section>`;
   }).join("");
+
+  const ctl = secs
+    ? `<div class="roomctl">
+         <button class="rbtn" id="roomExpandAll">Expand all</button>
+         <button class="rbtn" id="roomCollapseAll">Collapse all</button>
+       </div>`
+    : "";
 
   $("#main").innerHTML = `
     <div class="mainhead">
       <div class="songhead"><h2>Listening rooms</h2>
-        <span class="mini">acoustic measurements, by evaluator institution</span></div>
+        <span class="mini">photos &amp; acoustic measurements, by evaluator institution</span></div>
       <div class="hint">REW <b>.mdat</b> measurements are decoded into the response charts below
-        — toggle curves, hover for a readout.</div>
+        — toggle curves, hover for a readout. Click any photo to enlarge.</div>
+      ${ctl}
     </div>
     <div class="mainscroll" id="mainscroll">${secs || `<div class="empty">No room measurements found.</div>`}</div>`;
 
+  document.querySelectorAll(".roomsec h2").forEach(h =>
+    h.onclick = () => h.closest(".roomsec").classList.toggle("open"));
+  const setAll = open => document.querySelectorAll(".roomsec")
+    .forEach(s => s.classList.toggle("open", open));
+  if(secs){
+    $("#roomExpandAll").onclick   = () => setAll(true);
+    $("#roomCollapseAll").onclick = () => setAll(false);
+  }
+  document.querySelectorAll(".photogrid img").forEach(img =>
+    img.onclick = () => openLightbox(img.src));
   document.querySelectorAll(".roomchart").forEach(mountRoomChart);
 }
 
