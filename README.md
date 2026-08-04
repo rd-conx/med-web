@@ -29,3 +29,23 @@ Attribution and licence for each song are shown in the browser and come from the
 Open Multitrack Testbed and Shaking Through (Weathervane Music). Please respect
 each song's licence, including the non-commercial clause where it applies, when
 reusing any audio.
+
+## Reference
+
+The dataset is described in:
+
+Brecht De Man and Joshua D. Reiss, "The Mix Evaluation Dataset," in *Proceedings
+of the 20th International Conference on Digital Audio Effects (DAFx-17)*,
+Edinburgh, UK, September 5–9, 2017.
+[[PDF]](https://www.dafx.de/paper-archive/2017/papers/DAFx17_paper_49.pdf)
+
+```bibtex
+@inproceedings{deman2017mixevaluation,
+  title     = {The Mix Evaluation Dataset},
+  author    = {De Man, Brecht and Reiss, Joshua D.},
+  booktitle = {Proceedings of the 20th International Conference on Digital Audio Effects (DAFx-17)},
+  address   = {Edinburgh, UK},
+  month     = sep,
+  year      = {2017}
+}
+```

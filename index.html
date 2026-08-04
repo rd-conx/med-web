@@ -996,6 +996,24 @@
   .modalhow p:last-child{
     margin-bottom:0;
   }
+  /* Citation block at the foot of the acknowledgements modal */
+  .modalcite{
+    border-top:1px solid var(--line);
+    margin-top:14px;
+    padding-top:12px;
+    font-size:12.5px;
+    color:var(--mut);
+  }
+  .modalcite p{
+    margin:0 0 6px;
+  }
+  .modalcite p:first-child{
+    font-weight:600;
+    color:var(--fg);
+  }
+  .modalcite p:last-child{
+    margin-bottom:0;
+  }
 
   /* ============================================================
      Persistent acknowledgements footer (always visible, pinned).
@@ -1205,6 +1223,14 @@
       of time to supplementing the dataset with previously missing materials, including
       raw tracks, sessions, and processed tracks. Stay tuned for the upcoming
       Mix Evaluation 2.0!</p>
+    </div>
+    <div class="modalcite">
+      <p>If you use this dataset, please cite:</p>
+      <p>Brecht De Man and Joshua D. Reiss, “The Mix Evaluation Dataset,”
+      <i>Proc. 20th International Conference on Digital Audio Effects (DAFx-17)</i>,
+      Edinburgh, UK, 2017.
+      <a href="https://www.dafx.de/paper-archive/2017/papers/DAFx17_paper_49.pdf"
+         target="_blank" rel="noopener">PDF</a></p>
     </div>
   </div>
 </div>
