@@ -502,6 +502,11 @@
     bottom:0;
     border-radius:2px;
   }
+  /* Uncertainty whisker over the score bar: +/-1 standard error of the mean.
+     It is deliberately NOT the min-max range (which is dominated by one or two
+     outlying raters and stays wide no matter how many people agreed). The SE
+     band narrows as raters pile up, so two mixes whose bands overlap are mixes
+     the listening test did not actually separate. */
   .bar>.rng{
     position:absolute;
     top:2px;
@@ -667,6 +672,138 @@
   .nocmt{
     color:var(--mut);
     font-style:italic;
+  }
+
+  /* ============================================================
+     "What listeners talked about" — the annotation view.
+
+     Every rating comment in the dataset was hand-annotated into statements
+     tagged with the instrument, the mix feature, and a valence ("Holy hi hat!
+     Where is the kick?" -> negative hat/level=high + negative kick/level=low).
+     This strip tallies those tags per mix, so a score comes with the reason
+     listeners gave for it rather than standing on its own.
+     ============================================================ */
+  .topics{
+    margin-bottom:12px;
+  }
+  .topics h4{
+    margin:0 0 7px;
+    font-size:11.5px;
+    font-weight:600;
+    color:var(--mut);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .topiclist{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  /* Chips are buttons: clicking one filters the comments below to just those
+     that mention it. The chip's number is the COMMENT count, so it predicts
+     what the click will show (the statement count lives in the tooltip). */
+  .topic{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:3px 8px;
+    font-size:12px;
+    font-family:inherit;
+    color:inherit;
+    cursor:pointer;
+  }
+  .topic:hover{
+    border-color:var(--mut);
+  }
+  .topic.on{
+    border-color:var(--acc);
+    background:color-mix(in srgb, var(--acc) 12%, var(--panel));
+  }
+  .topic:focus-visible{
+    outline:2px solid var(--acc);
+    outline-offset:1px;
+  }
+  .topic b{
+    font-weight:600;
+  }
+
+  /* Filter status: what the chip click did, and the way back out. Always
+     rendered when a filter is on, so a shortened comment list is never
+     mistaken for the mix simply having fewer comments. */
+  .tfilter{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:9px 0 0;
+    font-size:12px;
+    color:var(--mut);
+  }
+  .tclear{
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--fg);
+    font:inherit;
+    font-size:11.5px;
+    border-radius:4px;
+    padding:2px 8px;
+    cursor:pointer;
+  }
+  .tclear:hover{border-color:var(--mut)}
+
+  /* Annotation-coverage note. Comments from sessions the annotators never
+     marked up are still shown, but contribute nothing to the topics above —
+     said out loud so a thin or absent strip reads as a property of the
+     dataset rather than as a bug in the page. */
+  .tnote{
+    margin-top:7px;
+    font-size:11.5px;
+    color:var(--mut);
+    font-style:italic;
+  }
+  /* Valence split as a two-tone meter: how much of the talk on this topic was
+     approving vs faulting. Width is the share, so a topic that is all red reads
+     as a consistent complaint rather than a merely popular subject. */
+  .tsplit{
+    display:flex;
+    width:44px;
+    height:4px;
+    border-radius:2px;
+    overflow:hidden;
+    background:var(--chip);
+    flex:none;
+  }
+  .tsplit>i{display:block;height:100%}
+  .tsplit>.p{background:var(--good)}
+  .tsplit>.n{background:var(--bad)}
+  .topic .tn{
+    color:var(--mut);
+    font-variant-numeric:tabular-nums;
+    font-size:11.5px;
+  }
+
+  /* Per-comment annotation: a valence stripe down the side and the tags the
+     annotator gave it. Colour here is the annotator's judgement of the text,
+     which is not the same thing as the numeric rating shown beside it. */
+  .cmt.v-positive{border-left:3px solid var(--good)}
+  .cmt.v-negative{border-left:3px solid var(--bad)}
+  .cmt.v-mixed{border-left:3px solid var(--warn)}
+  .cmt .tags{
+    margin-top:6px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px;
+  }
+  .cmt .tag{
+    font-size:10.5px;
+    color:var(--mut);
+    background:var(--chip);
+    border-radius:3px;
+    padding:1px 5px;
+    white-space:nowrap;
   }
 
   /* ============================================================
@@ -1135,16 +1272,17 @@
     .comments{grid-template-columns:1fr}
     .bar{min-width:60px}
     .scoreval{min-width:32px}
-    /* hide ±, n, notes */
-    th:nth-child(6),td:nth-child(6),
-    th:nth-child(7),td:nth-child(7),
-    th:nth-child(8),td:nth-child(8){display:none}
+    /* hide SD, n, notes — columns are now
+       1 #  2 Mix  3 Score  4 SD  5 n  6 notes  7 Audio
+       (Type and Mixer were both dropped as redundant). That leaves
+       #, Mix, Score, Audio — already the minimum set, so the narrower
+       breakpoint below has no further columns to shed. */
+    th:nth-child(4),td:nth-child(4),
+    th:nth-child(5),td:nth-child(5),
+    th:nth-child(6),td:nth-child(6){display:none}
   }
 
   @media(max-width:480px){
-    /* also drop Mixer + Type — leaves #, Mix, Score, Audio */
-    th:nth-child(3),td:nth-child(3),
-    th:nth-child(4),td:nth-child(4){display:none}
     .transport{gap:8px;padding:8px 10px}
     .tbtn{width:38px;height:38px}      /* comfortable touch targets */
     .ttime{min-width:0}
@@ -1200,8 +1338,13 @@
       <p>Browse the songs list, then open a song to see its mixes. Press <b>play</b> and use
       <b>◀ ▶</b> — or hit <b>▶</b> on any mix — to switch: every mix plays from the
       <b>same point</b>, MUSHRA-style A/B.</p>
-      <p><b>Tap a mix</b> to reveal its comments and every individual rating. The
-      <b>best</b> and <b>worst</b> mixes are highlighted.</p>
+      <p><b>Tap a mix</b> to reveal its comments and every individual rating, plus
+      <b>what listeners talked about</b> — the instruments and mix features their
+      comments were tagged with, and how much of that talk was approving.</p>
+      <p>Mixes are ranked by <b>mean rating</b>, and the highest and lowest are
+      highlighted. Ratings are subjective and the whisker on each score bar shows
+      ±1 standard error, so mixes whose whiskers overlap are ones this listening
+      test did not separate.</p>
     </div>
   </div>
 </div>
@@ -1598,6 +1741,12 @@ function init(){
     instOn.has(i) ? instOn.delete(i) : instOn.add(i);
     c.classList.toggle("on");
     renderSongList();
+    // An open detail panel filters its comments by instOn at render time, so
+    // it would otherwise keep showing the previous institution's comments
+    // until reopened — and the topic filter's "showing X of Y" line would be
+    // counting against a stale Y. Repaint it in place instead of re-rendering
+    // the song, which would collapse the panel the reader is in.
+    refreshOpenDetail();
   };
 
   const lb = $("#lightbox");
@@ -1984,13 +2133,25 @@ addEventListener("resize", () => {
 // ============================================================
 // Main: song detail + mix table
 // ============================================================
+// No "Type" column: 185 of 205 mixes are type "human", and 9 of the 20 songs
+// have nothing else, so the column was a word repeated down the page. It also
+// split on the wrong axis — a "reference" mix is a professional engineer's
+// mix, i.e. every bit as human as the rest; the only real outsider is the
+// automatic one. What is left is carried as a badge on the two dozen rows that
+// are not an ordinary test mix (see TYPE_BADGE), and unbadged now reads as
+// "an engineer's mix from the study", which is the default anyway.
+// No "Mixer" column either: the mixer IS the mix code's prefix for 197 of the
+// 205 mixes (McG-A is McG, UCP-B3 is UCP), so the column restated the word
+// already in the cell beside it. The only 8 exceptions are the automatic mix,
+// whose code is "Robot" and which already carries an "auto" badge — so the
+// column added nothing there either. The mixer is still spelled out in the
+// row's detail panel.
 const COLS = [
   {k:"rank_in_song",       label:"#",     num:true},
   {k:"mix_code",           label:"Mix"},
-  {k:"mixer_institution",  label:"Mixer"},
-  {k:"mix_type",           label:"Type"},
   {k:"mean",               label:"Score", num:true, headNum:false},
-  {k:"std",                label:"±",     num:true},
+  {k:"std",                label:"SD",    num:true,
+   title:"Standard deviation: how much raters disagreed. The whisker on the score bar is the standard ERROR (SD/√n), which is the narrower quantity."},
   {k:"n_rated",            label:"n",     num:true},
   {k:"n_comments",         label:"notes", num:true},
   {k:"audio",              label:"Audio"},
@@ -2040,8 +2201,8 @@ function renderSong(){
       <span class="tactive" title="The mix you currently hear — switching keeps the same playback position">now playing: <b id="tactivelbl">—</b></span>
     </div>` : "";
   const hint = hasAudio
-    ? `Press play, then use ◀ ▶ or hit ▶ on any mix to switch — they all play from the <b>same point</b> (MUSHRA-style A/B). <b>Click each mix to see its comments</b> and every rating.`
-    : `<b>Click each mix to see its comments</b> and every rating. Best &amp; worst are highlighted.`;
+    ? `Press play, then use <b>previous</b> or <b>next</b> or hit <b>listen</b> on any mix to switch. They all play from the same point (MUSHRA-style A/B). Click each mix to see its comments and every rating.`
+    : `<b>Click each mix to see its comments</b> and every rating. Highest and lowest mean rating are highlighted.`;
 
   // Pinned zone (song head + transport) above a scroll zone (table etc.),
   // so the shared player stays visible while browsing long mix tables.
@@ -2060,7 +2221,7 @@ function renderSong(){
       ${copyrightNote}
       ${rawTracksHTML(s)}
       <table>
-        <thead><tr>${COLS.map(c => `<th class="${(c.headNum ?? c.num) ? 'num' : ''}" data-k="${c.k}">${c.label}${sortKey === c.k ? (dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join("")}</tr></thead>
+        <thead><tr>${COLS.map(c => `<th class="${(c.headNum ?? c.num) ? 'num' : ''}" data-k="${c.k}"${c.title ? ` title="${c.title}"` : ""}>${c.label}${sortKey === c.k ? (dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join("")}</tr></thead>
         <tbody>${mixes.map(rowHTML.bind(null, s)).join("")}</tbody>
       </table>
     </div>`;
@@ -2074,7 +2235,7 @@ function renderSong(){
       sortDir *= -1;
     } else {
       sortKey = k;
-      const textCol = k === "rank_in_song" || k === "mix_code" || k === "mixer_institution" || k === "mix_type";
+      const textCol = k === "rank_in_song" || k === "mix_code";
       sortDir = textCol ? 1 : -1;
     }
     renderSong();
@@ -2091,6 +2252,26 @@ function renderSong(){
   m.querySelector("tbody").onclick = e => {
     const lb = e.target.closest(".lbtn");
     if(lb){ e.stopPropagation(); setActive(lb.dataset.play, true); return; }
+
+    // Topic chip / "show all" inside an open detail panel. Handled before the
+    // row lookup: these live in tr.detail, and repainting that panel in place
+    // keeps the reader where they are.
+    const chip  = e.target.closest("[data-topic]");
+    const clear = e.target.closest("[data-topic-clear]");
+    if(chip || clear){
+      const det = e.target.closest("tr.detail");
+      const row = det && det.previousElementSibling;
+      if(row){
+        const mx = s.mixes.find(m => m.mix_code === row.dataset.m);
+        // Clicking the active chip again clears it, so the chip is its own
+        // way back out as well as the way in.
+        topicFilter = clear ? null
+                    : (topicFilter === chip.dataset.topic ? null : chip.dataset.topic);
+        det.innerHTML = detailHTML(mx);
+      }
+      return;
+    }
+
     if(e.target.closest("a")) return;
     const tr = e.target.closest("tr.mixrow");
     if(!tr) return;
@@ -2133,33 +2314,57 @@ function rawTracksHTML(s){
     </div>`;
 }
 
+// The two mix kinds worth marking. "human" is the unmarked default (see COLS).
+const TYPE_BADGE = {
+  reference: {cls:"reference", label:"pro",
+              title:"Professional / reference mix, not one of the test mixes"},
+  automatic: {cls:"automatic", label:"auto",
+              title:"Mixed automatically by software, not by a person"},
+};
+
 function rowHTML(s, mx){
+  // Highest / lowest mean in this song. The rows are still tinted, but they
+  // carry no "best"/"worst" badge: the table is already sorted by score and
+  // already colour-coded, so the badge was a third copy of the same fact — and
+  // it asserted a verdict the data does not support. With 4-5 raters on some
+  // songs and standard deviations around 0.2-0.3, the top two mixes are
+  // routinely not separable at all. The +/-1 SE whisker below says so honestly.
   const isBest  = mx.mix_code === s.best;
   const isWorst = mx.mix_code === s.worst && s.best !== s.worst;
-  const tag = isBest  ? `<span class="badge good">best</span>`
-            : isWorst ? `<span class="badge" style="color:var(--bad)">worst</span>`
-            : "";
+
+  const tb  = TYPE_BADGE[mx.mix_type];
+  const tag = tb ? ` <span class="pill ${tb.cls}" title="${esc(tb.title)}">${tb.label}</span>` : "";
 
   const audio = mx.has_audio
     ? `<button class="lbtn" data-play="${esc(mx.mix_code)}" title="Listen to this mix (synced)">listen</button>`
     : `<span class="badge noaudio">no audio</span>`;
 
-  // Mean fill plus a min–max range whisker over the same 0..1 track.
-  const rng = mx.min != null && mx.max != null
-    ? `<span class="rng" style="left:${pct(mx.min)}%;width:${Math.max(1, pct(mx.max) - pct(mx.min))}%"></span>`
+  // Mean fill plus an uncertainty whisker over the same 0..1 track. The whisker
+  // is +/-1 standard error of the mean (std / sqrt(n)), not the min-max range:
+  // min-max only tells you the most extreme rater, and stays just as wide
+  // whether 5 people or 76 rated the mix, so it reads as uncertainty while
+  // measuring nothing of the kind. SE shrinks as agreement and n grow, which is
+  // the question a reader of a ranked table is actually asking. Min-max is kept
+  // in the tooltip.
+  const se  = (mx.std != null && mx.n_rated > 1) ? mx.std / Math.sqrt(mx.n_rated) : null;
+  const lo  = se != null ? Math.max(0, mx.mean - se) : null;
+  const hi  = se != null ? Math.min(1, mx.mean + se) : null;
+  const rng = lo != null
+    ? `<span class="rng" style="left:${pct(lo)}%;width:${Math.max(1, pct(hi) - pct(lo))}%"></span>`
     : "";
+  const barTitle = mx.mean == null ? "" :
+    `mean ${fmt(mx.mean,3)}${se != null ? ` ±1 SE ${fmt(lo,2)}–${fmt(hi,2)}` : ""}`
+    + ` · range ${fmt(mx.min,2)}–${fmt(mx.max,2)} · n=${mx.n_rated}`;
   const sc = mx.mean != null
     ? `<div class="scorecell"><span class="scoreval">${fmt(mx.mean,3)}</span>
-        <div class="bar" title="${fmt(mx.min,2)}–${fmt(mx.max,2)}">${rng}<i style="width:${pct(mx.mean)}%;background:${scoreColor(mx.mean)}"></i></div></div>`
+        <div class="bar" title="${esc(barTitle)}">${rng}<i style="width:${pct(mx.mean)}%;background:${scoreColor(mx.mean)}"></i></div></div>`
     : `<span class="mini">unrated</span>`;
 
   const sess = mx.has_session ? ` <span class="badge good" title="Pro Tools session present">PTX</span>` : "";
 
   return `<tr class="mixrow${isBest ? ' best' : ''}${isWorst ? ' worst' : ''}" data-m="${esc(mx.mix_code)}">
     <td class="num rank">${mx.rank_in_song ?? "—"}</td>
-    <td><span class="mixcode">${esc(mx.mix_code)}</span> ${tag}${sess}</td>
-    <td>${esc(mx.mixer_institution || "—")}</td>
-    <td><span class="pill ${mx.mix_type}">${mx.mix_type}</span></td>
+    <td><span class="mixcode">${esc(mx.mix_code)}</span>${tag}${sess}</td>
     <td class="num">${sc}</td>
     <td class="num mini">${fmt(mx.std,2)}</td>
     <td class="num">${mx.n_rated}</td>
@@ -2186,18 +2391,11 @@ function toggleDetail(tr, s){
 
   const mx = s.mixes.find(m => m.mix_code === tr.dataset.m);
   tr.classList.add("open");
+  topicFilter = null;              // each panel opens unfiltered
 
   const det = document.createElement("tr");
   det.className = "detail";
-  det.innerHTML = `<td colspan="${COLS.length}"><div class="dinner">
-    <div class="dgrid">
-      <span><b>${mx.n_evaluations}</b> ratings · <b>${mx.n_comments}</b> with comments</span>
-      <span>score ${fmt(mx.mean)} ± ${fmt(mx.std,3)} (${fmt(mx.min,2)}–${fmt(mx.max,2)})</span>
-      <span>mixer ${esc(mx.mixer_institution || "—")} · ${mx.mix_type}</span>
-      ${mx.audio_path ? `<span>${esc(mx.audio_path)}</span>` : ""}
-    </div>
-    <div class="comments">${commentsHTML(mx)}</div>
-  </div></td>`;
+  det.innerHTML = detailHTML(mx);
   tr.after(det);
 
   // Bring the clicked mix to the top of the scroll area (just under the sticky
@@ -2212,10 +2410,139 @@ function toggleDetail(tr, s){
   }
 }
 
+// The annotation summary for one mix: the instrument/feature topics its
+// listeners raised most, each split into how much of that talk was approving
+// vs faulting. This is the "why" behind the score — a 0.36 mean says a mix
+// lost, this says it was the guitar panning and a thin low end.
+// The open mix's detail panel. Split out of toggleDetail so a topic-chip click
+// can repaint just this panel — re-rendering the whole song would collapse the
+// row the reader is in and throw away their scroll position.
+function detailHTML(mx){
+  return `<td colspan="${COLS.length}"><div class="dinner">
+    <div class="dgrid">
+      <span><b>${mx.n_evaluations}</b> ratings · <b>${mx.n_comments}</b> with comments</span>
+      <span>score ${fmt(mx.mean)} ± ${fmt(mx.std,3)} (${fmt(mx.min,2)}–${fmt(mx.max,2)})</span>
+      <span>mixer ${esc(mx.mixer_institution || "—")} · ${mx.mix_type}</span>
+      ${mx.audio_path ? `<span>${esc(mx.audio_path)}</span>` : ""}
+    </div>
+    ${topicsHTML(mx)}
+    <div class="comments">${commentsHTML(mx)}</div>
+  </div></td>`;
+}
+
+// Repaint the currently open detail panel, if any, against current filters.
+function refreshOpenDetail(){
+  const det = document.querySelector("tr.detail");
+  const row = det && det.previousElementSibling;
+  if(!row || !curSong) return;
+  const song = DATA.songs.find(x => x.song_id === curSong);
+  const mx = song && song.mixes.find(m => m.mix_code === row.dataset.m);
+  if(mx) det.innerHTML = detailHTML(mx);
+}
+
+// Which topic the open mix's comments are filtered to (null = show all).
+// Deliberately reset whenever a detail panel opens: the filter belongs to the
+// panel you are reading, and carrying it silently into the next mix you click
+// would show a shortened list with no obvious cause.
+let topicFilter = null;
+
+function topicLabel(t){
+  return t.feature ? `${t.instrument}/${t.feature}` : t.instrument;
+}
+
+// Comments that mention a topic. Tags ship as one comma-separated string, and
+// the tag spelling is exactly the chip's label, so this is an exact member test
+// rather than a substring match — "vocal" must not also catch "vocal/spectral".
+function commentHasTopic(e, label){
+  return !!e.tags && e.tags.split(", ").includes(label);
+}
+
+function topicsHTML(mx){
+  const topics  = mx.topics || [];
+  const unann   = mx.n_unannotated || 0;
+  const summed  = Math.max(0, (mx.n_comments || 0) - unann);
+  const plural  = n => n === 1 ? "" : "s";
+
+  // No chips at all. If that is because nobody annotated these sessions, say
+  // so — otherwise the reader sees comments with no summary and no reason.
+  if(!topics.length){
+    if(!unann) return "";
+    return `<div class="topics">
+      <h4>What listeners talked about</h4>
+      <div class="tnote">No topic summary for this mix.</div>
+    </div>`;
+  }
+
+  const items = topics.map(t => {
+    const label = topicLabel(t);
+    // Valence split drawn against pos+neg+neu, NOT against t.n: a statement
+    // annotated "both" counts toward pos AND neg, so it can push pos+neg past
+    // n and overflow the track. The leftover gap is the neutral share —
+    // statements tagged to this topic that pass no judgement ("bright vocal").
+    const tot = t.pos + t.neg + t.neu || 1;
+    const wp  = Math.round(100 * t.pos / tot);
+    const wn  = Math.round(100 * t.neg / tot);
+    const nc  = t.n_comments;
+    const title = `${label} — click to show only these comments\n`
+                + `${nc} comment${nc === 1 ? "" : "s"}, `
+                + `${t.n} statement${t.n === 1 ? "" : "s"}: `
+                + `${t.pos} positive, ${t.neg} negative, ${t.neu} neutral`
+                + (t.neu ? " (the unfilled part of the bar)" : "");
+    const on = topicFilter === label ? " on" : "";
+    return `<button type="button" class="topic${on}" data-topic="${esc(label)}"
+        aria-pressed="${topicFilter === label}" title="${esc(title)}">
+      <b>${esc(label)}</b>
+      <span class="tsplit"><i class="p" style="width:${wp}%"></i><i class="n" style="width:${wn}%"></i></span>
+      <span class="tn">${nc}</span></button>`;
+  }).join("");
+
+  // Status line: only when a filter is active, but it then states both numbers
+  // and offers the way out, so a short list is never ambiguous.
+  let status = "";
+  if(topicFilter){
+    const shown = visibleComments(mx).length;
+    const all   = instFiltered(mx).length;
+    status = `<div class="tfilter">
+      <span>Showing <b>${shown}</b> of ${all} comment${all === 1 ? "" : "s"} — mentioning <b>${esc(topicFilter)}</b></span>
+      <button type="button" class="tclear" data-topic-clear>show all</button>
+    </div>`;
+  }
+
+  // Partial coverage: some of this mix's comments are from un-annotated
+  // sessions, so the chips above speak for fewer comments than the panel shows.
+  const coverage = unann
+    ? `<div class="tnote">Based on ${summed} of ${mx.n_comments} comments —
+         ${unann} come from sessions that were never annotated.</div>`
+    : "";
+
+  return `<div class="topics">
+    <h4>What listeners talked about</h4>
+    <div class="topiclist">${items}</div>
+    ${coverage}
+    ${status}
+  </div>`;
+}
+
+// The two comment filters, kept separate so they compose predictably:
+// the sidebar's institution chips narrow WHO, a topic chip narrows WHAT ABOUT.
+function instFiltered(mx){
+  return mx.evaluations.filter(e => !instOn.size || instOn.has(e.evaluator_institution));
+}
+
+function visibleComments(mx){
+  const evs = instFiltered(mx);
+  return topicFilter ? evs.filter(e => commentHasTopic(e, topicFilter)) : evs;
+}
+
 function commentsHTML(mx){
-  const evs = mx.evaluations.filter(e =>
-    !instOn.size || instOn.has(e.evaluator_institution));
-  if(!evs.length) return `<div class="nocmt">No ratings.</div>`;
+  const evs = visibleComments(mx);
+  if(!evs.length){
+    // Distinguish "this mix has no ratings" from "your filter matched nothing",
+    // which look identical otherwise.
+    return topicFilter
+      ? `<div class="nocmt">No comments mention ${esc(topicFilter)}${instOn.size ? " from the selected institutions" : ""}.</div>`
+      : `<div class="nocmt">No ratings.</div>`;
+  }
 
   return evs.map(e => {
     const dur  = e.listen_duration != null ? `${Math.round(e.listen_duration)}s` : "";
@@ -2223,10 +2550,18 @@ function commentsHTML(mx){
     const sc   = e.rating != null ? fmt(e.rating,2) : "—";
     const body = e.comment ? esc(e.comment) : `<span class="nocmt">(no comment)</span>`;
     const orig = e.original ? `<div class="orig">orig: ${esc(e.original)}</div>` : "";
-    return `<div class="cmt">
+    // Valence is the annotator's read of the words, deliberately separate from
+    // the rating beside it — a comment can fault a mix in detail and still come
+    // with a decent score, and seeing the two disagree is informative.
+    const vcls = e.valence && e.valence !== "neutral" ? ` v-${e.valence}` : "";
+    // Tags arrive as one comma-separated string to keep data.json small.
+    const tags = e.tags
+      ? `<div class="tags">${e.tags.split(", ").map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>`
+      : "";
+    return `<div class="cmt${vcls}">
       <div class="ch"><span class="who">${esc(e.participant_id)} · ${esc(e.evaluator_institution || "")} ${e.year || ""} ${ord} ${dur}</span>
         <span class="sc" style="color:${scoreColor(e.rating)}">${sc}</span></div>
-      <div class="tx">${body}</div>${orig}
+      <div class="tx">${body}</div>${orig}${tags}
     </div>`;
   }).join("");
 }
